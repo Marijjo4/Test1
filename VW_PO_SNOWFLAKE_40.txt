@@ -1,0 +1,612 @@
+-------------------------------------------MRP---------------------------
+create or replace view DEV_TDS_GBL_PRASSMNT.PROCESS_ASSESMENT.ACC_DOCUMENTS_MRP AS
+SELECT
+    // BSEG
+    BSEG.SID,
+    BSEG.MANDT,
+    BSEG.BUZEI "DocNumberItem",
+    BSEG.AUGBL "DocumentNumberClearing",
+    BSEG.KOART "AccountType",
+    BSEG.SHKZG "DebitCreditInd",
+    BSEG.GSBER "BusinessArea",
+    CASE
+        WHEN BKPF.WAERS = 'COP' THEN BSEG.DMBTR * 100
+        ELSE BSEG.DMBTR
+    END AS "AmountLC",
+    CASE 
+        WHEN BKPF.WAERS = 'COP' THEN BSEG.WRBTR * 100
+        ELSE BSEG.WRBTR
+    END AS "AmountDC",
+    BSEG.SGTXT "ItemText",
+    BSEG.KOKRS "ControllingArea",
+    BSEG.HKONT "GeneralLedgerAccount",
+    BSEG.LIFNR "Vendor",
+    BSEG.ZTERM "PaymentTerm",
+    BSEG.ZBD1T "DiscountsDay1",
+    BSEG.EBELN "PO",
+    BSEG.EBELP "POItem",
+    BSEG.KUNNR "Customer",
+    BSEG.FILKD "BranchAccNumber",
+    BSEG.ZLSCH "PaymentMethod",
+    BSEG.PARGB "TradingPartnerBusinessArea",
+    BSEG.ZUONR "Assignment",
+    BSEG.VBUND "VendorTradingPartner",
+    BSEG.KOSTL "CostCenter",
+    BSEG.VBELN "BillingDocument",
+    BSEG.VBEL2 "SalesDocument",
+    BSEG.POSN2 "SalesDocumentItem",
+    BSEG.ANLN1 "MainAsset",
+    BSEG.ANLN2 "AssetSubNumber",
+    BSEG.ANBWA "AssetType",
+    BSEG.HZUON "AssigmentSpecial",
+    BSEG.DMBE2 "AmountUSD",
+    BSEG.KKBER "CreditControlArea",
+    BSEG.SEGMENT "Segment",
+    BSEG.PSEGMENT "PartnerSegment",
+    BSEG.AGZEI "ClearingItem",
+    TRY_TO_DATE(BSEG.MODIF_DATE,'yyyymmdd') "MODIF_DATE",
+    BSEG.PRCTR "ProfitCenter",
+    BSEG.UMSKZ "SpecialGLIndicator",
+    TRY_TO_DATE(BSEG.ZFBDT,'yyyymmdd') "BaselineDateForDueDate",
+    TRY_TO_DATE(BSEG.AUGDT,'yyyymmdd') "ClearingDate",
+    BSEG.BSCHL "PostingKey",
+    
+    // BKPF
+    BKPF.BUKRS "Company",
+    BKPF.BELNR "AccDocNumber",
+    BKPF.GJAHR "FiscalYear",
+    BKPF.BLART "DocumentType",
+    TRY_TO_DATE(BKPF.BLDAT,'yyyymmdd') "DateInDocument",
+    TRY_TO_DATE(BKPF.BUDAT,'yyyymmdd') "PostingDate",
+    TRY_TO_DATE(BKPF.CPUDT,'yyyymmdd') "CreationDate",
+    BKPF.USNAM "UserName",
+    BKPF.TCODE "TransactionCode",
+    BKPF.XBLNR "Reference",
+    BKPF.STBLG "ReverseDocNumber",
+    BKPF.BKTXT "DocumentHeaderText",
+    BKPF.WAERS "Currency",
+    BKPF.HWAER "LocalCurrency",
+    BKPF.AWKEY "ObjectKey",
+    
+    //T001
+    T001.BUTXT "CompanyName",
+    
+    //T005T
+    T005T.LAND1 "CompanyCountry",
+    T005T.LANDX "CompanyCountryName",
+    
+    //KNA1
+    CONCAT(KNA1.NAME1,KNA1.NAME2) "CustomerFullName",
+    
+    //LFA1
+    CONCAT(TRIM(LFA1.NAME1),TRIM(LFA1.NAME2)) "VendorFullName",
+    LFA1.J_1KFTIND "VendorTypeofIndustry",
+    LFA1.KTOKK "VendorAccountGroup",
+    LFA1.STKZN "NaturalPerson",
+    LFA1.SORTL "VendorSearchTerm",
+    LFA1.STCD1 "VendorTaxNumber1",
+    
+    //T077Y
+    T077Y.TXT30 "VendorAccountGroupName"
+    
+FROM "PRD_LND_MRP_SAP"."MRP500"."BSEG" BSEG
+INNER JOIN "PRD_LND_MRP_SAP"."MRP500"."BKPF" BKPF
+    ON (BSEG.SID = BKPF.SID AND BSEG.MANDT = BKPF.MANDT AND BSEG.BUKRS = BKPF.BUKRS 
+        AND BSEG.BELNR = BKPF.BELNR AND BSEG.GJAHR = BKPF.GJAHR)
+INNER JOIN "PRD_LND_MRP_SAP"."MRP500"."T001"
+    ON (T001.SID = BKPF.SID AND T001.MANDT = BKPF.MANDT AND T001.BUKRS = BKPF.BUKRS)
+INNER JOIN "PRD_LND_MRP_SAP"."MRP500"."T005T"
+    ON (T001.SID = T005T.SID AND T001.MANDT = T005T.MANDT AND T001.LAND1 = T005T.LAND1 AND T005T.SPRAS = 'S')
+LEFT JOIN "PRD_LND_MRP_SAP"."MRP500"."KNA1"
+    ON (KNA1.SID = BSEG.SID AND KNA1.MANDT = BSEG.MANDT AND KNA1.KUNNR = BSEG.KUNNR AND KNA1.SPRAS = 'S')
+LEFT JOIN "PRD_LND_MRP_SAP"."MRP500"."LFA1"
+    ON (LFA1.SID = BSEG.SID AND LFA1.MANDT = BSEG.MANDT AND LFA1.LIFNR = BSEG.LIFNR AND LFA1.SPRAS = 'S')
+LEFT JOIN "PRD_LND_MRP_SAP"."MRP500"."T077Y"
+    ON(LFA1.SID = T077Y.SID AND LFA1.MANDT = T077Y.MANDT AND LFA1.KTOKK = T077Y.KTOKK AND T077Y.SPRAS = 'S');
+
+-------------------------------------------NRP---------------------------
+create or replace view DEV_TDS_GBL_PRASSMNT.PROCESS_ASSESMENT.ACC_DOCUMENTS_NRP AS 
+SELECT
+    // BSEG
+    BSEG.SID,
+    BSEG.MANDT,
+    BSEG.BUZEI "DocNumberItem",
+    BSEG.AUGBL "DocumentNumberClearing",
+    BSEG.KOART "AccountType",
+    BSEG.SHKZG "DebitCreditInd",
+    BSEG.GSBER "BusinessArea",
+    CASE
+        WHEN BKPF.WAERS = 'COP' THEN BSEG.DMBTR * 100
+        ELSE BSEG.DMBTR
+    END AS "AmountLC",
+    CASE 
+        WHEN BKPF.WAERS = 'COP' THEN BSEG.WRBTR * 100
+        ELSE BSEG.WRBTR
+    END AS "AmountDC",
+    BSEG.SGTXT "ItemText",
+    BSEG.KOKRS "ControllingArea",
+    BSEG.HKONT "GeneralLedgerAccount",
+    BSEG.LIFNR "Vendor",
+    BSEG.ZTERM "PaymentTerm",
+    BSEG.ZBD1T "DiscountsDay1",
+    BSEG.EBELN "PO",
+    BSEG.EBELP "POItem",
+    BSEG.KUNNR "Customer",
+    BSEG.FILKD "BranchAccNumber",
+    BSEG.ZLSCH "PaymentMethod",
+    BSEG.PARGB "TradingPartnerBusinessArea",
+    BSEG.ZUONR "Assignment",
+    BSEG.VBUND "VendorTradingPartner",
+    BSEG.KOSTL "CostCenter",
+    BSEG.VBELN "BillingDocument",
+    BSEG.VBEL2 "SalesDocument",
+    BSEG.POSN2 "SalesDocumentItem",
+    BSEG.ANLN1 "MainAsset",
+    BSEG.ANLN2 "AssetSubNumber",
+    BSEG.ANBWA "AssetType",
+    BSEG.HZUON "AssigmentSpecial",
+    BSEG.DMBE2 "AmountUSD",
+    BSEG.KKBER "CreditControlArea",
+    BSEG.SEGMENT "Segment",
+    BSEG.PSEGMENT "PartnerSegment",
+    BSEG.AGZEI "ClearingItem",
+    TRY_TO_DATE(BSEG.MODIF_DATE,'yyyymmdd') "MODIF_DATE",
+    BSEG.PRCTR "ProfitCenter",
+    BSEG.UMSKZ "SpecialGLIndicator",
+    TRY_TO_DATE(BSEG.ZFBDT,'yyyymmdd') "BaselineDateForDueDate",
+    TRY_TO_DATE(BSEG.AUGDT,'yyyymmdd') "ClearingDate",
+    BSEG.BSCHL "PostingKey",
+    
+    // BKPF
+    BKPF.BUKRS "Company",
+    BKPF.BELNR "AccDocNumber",
+    BKPF.GJAHR "FiscalYear",
+    BKPF.BLART "DocumentType",
+    TRY_TO_DATE(BKPF.BLDAT,'yyyymmdd') "DateInDocument",
+    TRY_TO_DATE(BKPF.BUDAT,'yyyymmdd') "PostingDate",
+    TRY_TO_DATE(BKPF.CPUDT,'yyyymmdd') "CreationDate",
+    BKPF.USNAM "UserName",
+    BKPF.TCODE "TransactionCode",
+    BKPF.XBLNR "Reference",
+    BKPF.STBLG "ReverseDocNumber",
+    BKPF.BKTXT "DocumentHeaderText",
+    BKPF.WAERS "Currency",
+    BKPF.HWAER "LocalCurrency",
+    BKPF.AWKEY "ObjectKey",
+    
+    //T001
+    T001.BUTXT "CompanyName",
+    
+    //T005T
+    T005T.LAND1 "CompanyCountry",
+    T005T.LANDX "CompanyCountryName",
+    
+    //KNA1
+    CONCAT(KNA1.NAME1,KNA1.NAME2) "CustomerFullName",
+    
+    //LFA1
+    CONCAT(TRIM(LFA1.NAME1),TRIM(LFA1.NAME2)) "VendorFullName",
+    LFA1.J_1KFTIND "VendorTypeofIndustry",
+    LFA1.KTOKK "VendorAccountGroup",
+    LFA1.STKZN "NaturalPerson",
+    LFA1.SORTL "VendorSearchTerm",
+    LFA1.STCD1 "VendorTaxNumber1"
+    
+    //T077Y
+    --T077Y.TXT30 "VendorAccountGroupName"
+    
+FROM "PRD_LND_NRP_SAP"."NRQ500"."BSEG" BSEG
+INNER JOIN "PRD_LND_NRP_SAP"."NRQ500"."BKPF" BKPF
+    ON (BSEG.SID = BKPF.SID AND BSEG.MANDT = BKPF.MANDT AND BSEG.BUKRS = BKPF.BUKRS 
+        AND BSEG.BELNR = BKPF.BELNR AND BSEG.GJAHR = BKPF.GJAHR)
+INNER JOIN "PRD_LND_NRP_SAP"."NRQ500"."T001"
+    ON (T001.SID = BKPF.SID AND T001.MANDT = BKPF.MANDT AND T001.BUKRS = BKPF.BUKRS)
+INNER JOIN "PRD_LND_NRP_SAP"."NRQ500"."T005T"
+    ON (T001.SID = T005T.SID AND T001.MANDT = T005T.MANDT AND T001.LAND1 = T005T.LAND1 AND T005T.SPRAS = 'S')
+LEFT JOIN "PRD_LND_NRP_SAP"."NRQ500"."KNA1"
+    ON (KNA1.SID = BSEG.SID AND KNA1.MANDT = BSEG.MANDT AND KNA1.KUNNR = BSEG.KUNNR AND KNA1.SPRAS = 'S')
+LEFT JOIN "PRD_LND_NRP_SAP"."NRQ500"."LFA1"
+    ON (LFA1.SID = BSEG.SID AND LFA1.MANDT = BSEG.MANDT AND LFA1.LIFNR = BSEG.LIFNR AND LFA1.SPRAS = 'S')
+--LEFT JOIN "PRD_LND_NRP_SAP"."NRQ500"."T077Y"
+    --ON(LFA1.SID = T077Y.SID AND LFA1.MANDT = T077Y.MANDT AND LFA1.KTOKK = T077Y.KTOKK AND T077Y.SPRAS = 'S')
+    ;
+
+-------------------------------------------SRP---------------------------
+create or replace view DEV_TDS_GBL_PRASSMNT.PROCESS_ASSESMENT.ACC_DOCUMENTS_SRP AS
+SELECT
+    // BSEG
+    BSEG.SID,
+    BSEG.MANDT,
+    BSEG.BUZEI "DocNumberItem",
+    BSEG.AUGBL "DocumentNumberClearing",
+    BSEG.KOART "AccountType",
+    BSEG.SHKZG "DebitCreditInd",
+    BSEG.GSBER "BusinessArea",
+    BSEG.DMBTR "AmountLC",
+    BSEG.WRBTR "AmountDC",
+    BSEG.SGTXT "ItemText",
+    BSEG.KOKRS "ControllingArea",
+    BSEG.HKONT "GeneralLedgerAccount",
+    BSEG.LIFNR "Vendor",
+    BSEG.ZTERM "PaymentTerm",
+    BSEG.ZBD1T "DiscountsDay1",
+    BSEG.EBELN "PO",
+    BSEG.EBELP "POItem",
+    BSEG.KUNNR "Customer",
+    BSEG.FILKD "BranchAccNumber",
+    BSEG.ZLSCH "PaymentMethod",
+    BSEG.PARGB "TradingPartnerBusinessArea",
+    BSEG.ZUONR "Assignment",
+    BSEG.VBUND "VendorTradingPartner",
+    BSEG.KOSTL "CostCenter",
+    BSEG.VBELN "BillingDocument",
+    BSEG.VBEL2 "SalesDocument",
+    BSEG.POSN2 "SalesDocumentItem",
+    BSEG.ANLN1 "MainAsset",
+    BSEG.ANLN2 "AssetSubNumber",
+    BSEG.ANBWA "AssetType",
+    BSEG.HZUON "AssigmentSpecial",
+    BSEG.DMBE2 "AmountUSD",
+    BSEG.KKBER "CreditControlArea",
+    BSEG.SEGMENT "Segment",
+    BSEG.PSEGMENT "PartnerSegment",
+    BSEG.AGZEI "ClearingItem",
+    TRY_TO_DATE(BSEG.MODIF_DATE,'yyyymmdd') "MODIF_DATE",
+    BSEG.PRCTR "ProfitCenter",
+    BSEG.UMSKZ "SpecialGLIndicator",
+    TRY_TO_DATE(BSEG.ZFBDT,'yyyymmdd') "BaselineDateForDueDate",
+    TRY_TO_DATE(BSEG.AUGDT,'yyyymmdd') "ClearingDate",
+    BSEG.BSCHL "PostingKey",
+    
+    // BKPF
+    BKPF.BUKRS "Company",
+    BKPF.BELNR "AccDocNumber",
+    BKPF.GJAHR "FiscalYear",
+    BKPF.BLART "DocumentType",
+    TRY_TO_DATE(BKPF.BLDAT,'yyyymmdd') "DateInDocument",
+    TRY_TO_DATE(BKPF.BUDAT,'yyyymmdd') "PostingDate",
+    TRY_TO_DATE(BKPF.CPUDT,'yyyymmdd') "CreationDate",
+    BKPF.USNAM "UserName",
+    BKPF.TCODE "TransactionCode",
+    BKPF.XBLNR "Reference",
+    BKPF.STBLG "ReverseDocNumber",
+    BKPF.BKTXT "DocumentHeaderText",
+    BKPF.WAERS "Currency",
+    BKPF.HWAER "LocalCurrency",
+    BKPF.AWKEY "ObjectKey",
+    
+    //T001
+    T001.BUTXT "CompanyName",
+    
+    //T005T
+    T005T.LAND1 "CompanyCountry",
+    T005T.LANDX "CompanyCountryName",
+    
+    //KNA1
+    CONCAT(KNA1.NAME1,KNA1.NAME2) "CustomerFullName",
+    
+    //LFA1
+    CONCAT(TRIM(LFA1.NAME1),TRIM(LFA1.NAME2)) "VendorFullName",
+    LFA1.J_1KFTIND "VendorTypeofIndustry",
+    LFA1.KTOKK "VendorAccountGroup",
+    LFA1.STKZN "NaturalPerson",
+    LFA1.SORTL "VendorSearchTerm",
+    LFA1.STCD1 "VendorTaxNumber1",
+    
+    //T077Y
+    T077Y.TXT30 "VendorAccountGroupName"
+    
+FROM "PRD_LND_SRP_SAP"."SRP500"."BSEG" BSEG
+INNER JOIN "PRD_LND_SRP_SAP"."SRP500"."BKPF" BKPF
+    ON (BSEG.SID = BKPF.SID AND BSEG.MANDT = BKPF.MANDT AND BSEG.BUKRS = BKPF.BUKRS 
+        AND BSEG.BELNR = BKPF.BELNR AND BSEG.GJAHR = BKPF.GJAHR)
+INNER JOIN "PRD_LND_SRP_SAP"."SRP500"."T001"
+    ON (T001.SID = BKPF.SID AND T001.MANDT = BKPF.MANDT AND T001.BUKRS = BKPF.BUKRS)
+INNER JOIN "PRD_LND_SRP_SAP"."SRP500"."T005T"
+    ON (T001.SID = T005T.SID AND T001.MANDT = T005T.MANDT AND T001.LAND1 = T005T.LAND1 AND T005T.SPRAS = 'E')
+LEFT JOIN "PRD_LND_SRP_SAP"."SRP500"."KNA1"
+    ON (KNA1.SID = BSEG.SID AND KNA1.MANDT = BSEG.MANDT AND KNA1.KUNNR = BSEG.KUNNR AND KNA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_SRP_SAP"."SRP500"."LFA1"
+    ON (LFA1.SID = BSEG.SID AND LFA1.MANDT = BSEG.MANDT AND LFA1.LIFNR = BSEG.LIFNR AND LFA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_SRP_SAP"."SRP500"."T077Y"
+    ON(LFA1.SID = T077Y.SID AND LFA1.MANDT = T077Y.MANDT AND LFA1.KTOKK = T077Y.KTOKK AND T077Y.SPRAS = 'E');
+
+-------------------------------------------XRP---------------------------
+create or replace view DEV_TDS_GBL_PRASSMNT.PROCESS_ASSESMENT.ACC_DOCUMENTS_XRP AS
+SELECT
+    // BSEG
+    BSEG.SID,
+    BSEG.MANDT,
+    BSEG.BUZEI "DocNumberItem",
+    BSEG.AUGBL "DocumentNumberClearing",
+    BSEG.KOART "AccountType",
+    BSEG.SHKZG "DebitCreditInd",
+    BSEG.GSBER "BusinessArea",
+    BSEG.DMBTR "AmountLC",
+    BSEG.WRBTR "AmountDC",
+    BSEG.SGTXT "ItemText",
+    BSEG.KOKRS "ControllingArea",
+    BSEG.HKONT "GeneralLedgerAccount",
+    BSEG.LIFNR "Vendor",
+    BSEG.ZTERM "PaymentTerm",
+    BSEG.ZBD1T "DiscountsDay1",
+    BSEG.EBELN "PO",
+    BSEG.EBELP "POItem",
+    BSEG.KUNNR "Customer",
+    BSEG.FILKD "BranchAccNumber",
+    BSEG.ZLSCH "PaymentMethod",
+    BSEG.PARGB "TradingPartnerBusinessArea",
+    BSEG.ZUONR "Assignment",
+    BSEG.VBUND "VendorTradingPartner",
+    BSEG.KOSTL "CostCenter",
+    BSEG.VBELN "BillingDocument",
+    BSEG.VBEL2 "SalesDocument",
+    BSEG.POSN2 "SalesDocumentItem",
+    BSEG.ANLN1 "MainAsset",
+    BSEG.ANLN2 "AssetSubNumber",
+    BSEG.ANBWA "AssetType",
+    BSEG.HZUON "AssigmentSpecial",
+    BSEG.DMBE2 "AmountUSD",
+    BSEG.KKBER "CreditControlArea",
+    BSEG.SEGMENT "Segment",
+    BSEG.PSEGMENT "PartnerSegment",
+    BSEG.AGZEI "ClearingItem",
+    TRY_TO_DATE(BSEG.MODIF_DATE,'yyyymmdd') "MODIF_DATE",
+    BSEG.PRCTR "ProfitCenter",
+    BSEG.UMSKZ "SpecialGLIndicator",
+    TRY_TO_DATE(BSEG.ZFBDT,'yyyymmdd') "BaselineDateForDueDate",
+    TRY_TO_DATE(BSEG.AUGDT,'yyyymmdd') "ClearingDate",
+    BSEG.BSCHL "PostingKey",
+    
+    // BKPF
+    BKPF.BUKRS "Company",
+    BKPF.BELNR "AccDocNumber",
+    BKPF.GJAHR "FiscalYear",
+    BKPF.BLART "DocumentType",
+    TRY_TO_DATE(BKPF.BLDAT,'yyyymmdd') "DateInDocument",
+    TRY_TO_DATE(BKPF.BUDAT,'yyyymmdd') "PostingDate",
+    TRY_TO_DATE(BKPF.CPUDT,'yyyymmdd') "CreationDate",
+    BKPF.USNAM "UserName",
+    BKPF.TCODE "TransactionCode",
+    BKPF.XBLNR "Reference",
+    BKPF.STBLG "ReverseDocNumber",
+    BKPF.BKTXT "DocumentHeaderText",
+    BKPF.WAERS "Currency",
+    BKPF.HWAER "LocalCurrency",
+    BKPF.AWKEY "ObjectKey",
+    
+    //T001
+    T001.BUTXT "CompanyName",
+    
+    //T005T
+    T005T.LAND1 "CompanyCountry",
+    T005T.LANDX "CompanyCountryName",
+    
+    //KNA1
+    CONCAT(KNA1.NAME1,KNA1.NAME2) "CustomerFullName",
+    
+    //LFA1
+    CONCAT(TRIM(LFA1.NAME1),TRIM(LFA1.NAME2)) "VendorFullName",
+    LFA1.J_1KFTIND "VendorTypeofIndustry",
+    LFA1.KTOKK "VendorAccountGroup",
+    LFA1.STKZN "NaturalPerson",
+    LFA1.SORTL "VendorSearchTerm",
+    LFA1.STCD1 "VendorTaxNumber1",
+    
+    //T077Y
+    T077Y.TXT30 "VendorAccountGroupName"
+    
+FROM "PRD_LND_XRP_SAP"."XRP500"."BSEG" BSEG
+INNER JOIN "PRD_LND_XRP_SAP"."XRP500"."BKPF" BKPF
+    ON (BSEG.SID = BKPF.SID AND BSEG.MANDT = BKPF.MANDT AND BSEG.BUKRS = BKPF.BUKRS 
+        AND BSEG.BELNR = BKPF.BELNR AND BSEG.GJAHR = BKPF.GJAHR)
+INNER JOIN "PRD_LND_XRP_SAP"."XRP500"."T001"
+    ON (T001.SID = BKPF.SID AND T001.MANDT = BKPF.MANDT AND T001.BUKRS = BKPF.BUKRS)
+INNER JOIN "PRD_LND_XRP_SAP"."XRP500"."T005T"
+    ON (T001.SID = T005T.SID AND T001.MANDT = T005T.MANDT AND T001.LAND1 = T005T.LAND1 AND T005T.SPRAS = 'E')
+LEFT JOIN "PRD_LND_XRP_SAP"."XRP500"."KNA1"
+    ON (KNA1.SID = BSEG.SID AND KNA1.MANDT = BSEG.MANDT AND KNA1.KUNNR = BSEG.KUNNR AND KNA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_XRP_SAP"."XRP500"."LFA1"
+    ON (LFA1.SID = BSEG.SID AND LFA1.MANDT = BSEG.MANDT AND LFA1.LIFNR = BSEG.LIFNR AND LFA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_XRP_SAP"."XRP500"."T077Y"
+    ON(LFA1.SID = T077Y.SID AND LFA1.MANDT = T077Y.MANDT AND LFA1.KTOKK = T077Y.KTOKK AND T077Y.SPRAS = 'E');
+
+-------------------------------------------ZRP---------------------------
+create or replace view DEV_TDS_GBL_PRASSMNT.PROCESS_ASSESMENT.ACC_DOCUMENTS_ZRP AS
+SELECT
+    // BSEG
+    BSEG.SID,
+    BSEG.MANDT,
+    BSEG.BUZEI "DocNumberItem",
+    BSEG.AUGBL "DocumentNumberClearing",
+    BSEG.KOART "AccountType",
+    BSEG.SHKZG "DebitCreditInd",
+    BSEG.GSBER "BusinessArea",
+    BSEG.DMBTR "AmountLC",
+    BSEG.WRBTR "AmountDC",
+    BSEG.SGTXT "ItemText",
+    BSEG.KOKRS "ControllingArea",
+    BSEG.HKONT "GeneralLedgerAccount",
+    BSEG.LIFNR "Vendor",
+    BSEG.ZTERM "PaymentTerm",
+    BSEG.ZBD1T "DiscountsDay1",
+    BSEG.EBELN "PO",
+    BSEG.EBELP "POItem",
+    BSEG.KUNNR "Customer",
+    BSEG.FILKD "BranchAccNumber",
+    BSEG.ZLSCH "PaymentMethod",
+    BSEG.PARGB "TradingPartnerBusinessArea",
+    BSEG.ZUONR "Assignment",
+    BSEG.VBUND "VendorTradingPartner",
+    BSEG.KOSTL "CostCenter",
+    BSEG.VBELN "BillingDocument",
+    BSEG.VBEL2 "SalesDocument",
+    BSEG.POSN2 "SalesDocumentItem",
+    BSEG.ANLN1 "MainAsset",
+    BSEG.ANLN2 "AssetSubNumber",
+    BSEG.ANBWA "AssetType",
+    BSEG.HZUON "AssigmentSpecial",
+    BSEG.DMBE2 "AmountUSD",
+    BSEG.KKBER "CreditControlArea",
+    BSEG.SEGMENT "Segment",
+    BSEG.PSEGMENT "PartnerSegment",
+    BSEG.AGZEI "ClearingItem",
+    TRY_TO_DATE(BSEG.MODIF_DATE,'yyyymmdd') "MODIF_DATE",
+    BSEG.PRCTR "ProfitCenter",
+    BSEG.UMSKZ "SpecialGLIndicator",
+    TRY_TO_DATE(BSEG.ZFBDT,'yyyymmdd') "BaselineDateForDueDate",
+    TRY_TO_DATE(BSEG.AUGDT,'yyyymmdd') "ClearingDate",
+    BSEG.BSCHL "PostingKey",
+    
+    // BKPF
+    BKPF.BUKRS "Company",
+    BKPF.BELNR "AccDocNumber",
+    BKPF.GJAHR "FiscalYear",
+    BKPF.BLART "DocumentType",
+    TRY_TO_DATE(BKPF.BLDAT,'yyyymmdd') "DateInDocument",
+    TRY_TO_DATE(BKPF.BUDAT,'yyyymmdd') "PostingDate",
+    TRY_TO_DATE(BKPF.CPUDT,'yyyymmdd') "CreationDate",
+    BKPF.USNAM "UserName",
+    BKPF.TCODE "TransactionCode",
+    BKPF.XBLNR "Reference",
+    BKPF.STBLG "ReverseDocNumber",
+    BKPF.BKTXT "DocumentHeaderText",
+    BKPF.WAERS "Currency",
+    BKPF.HWAER "LocalCurrency",
+    BKPF.AWKEY "ObjectKey",
+    
+    //T001
+    T001.BUTXT "CompanyName",
+    
+    //T005T
+    T005T.LAND1 "CompanyCountry",
+    T005T.LANDX "CompanyCountryName",
+    
+    //KNA1
+    CONCAT(KNA1.NAME1,KNA1.NAME2) "CustomerFullName",
+    
+    //LFA1
+    CONCAT(TRIM(LFA1.NAME1),TRIM(LFA1.NAME2)) "VendorFullName",
+    LFA1.J_1KFTIND "VendorTypeofIndustry",
+    LFA1.KTOKK "VendorAccountGroup",
+    LFA1.STKZN "NaturalPerson",
+    LFA1.SORTL "VendorSearchTerm",
+    LFA1.STCD1 "VendorTaxNumber1",
+    
+    //T077Y
+    T077Y.TXT30 "VendorAccountGroupName"
+    
+FROM "PRD_LND_ZRP_SAP"."ZRP500"."BSEG" BSEG
+INNER JOIN "PRD_LND_ZRP_SAP"."ZRP500"."BKPF" BKPF
+    ON (BSEG.SID = BKPF.SID AND BSEG.MANDT = BKPF.MANDT AND BSEG.BUKRS = BKPF.BUKRS 
+        AND BSEG.BELNR = BKPF.BELNR AND BSEG.GJAHR = BKPF.GJAHR)
+INNER JOIN "PRD_LND_ZRP_SAP"."ZRP500"."T001"
+    ON (T001.SID = BKPF.SID AND T001.MANDT = BKPF.MANDT AND T001.BUKRS = BKPF.BUKRS)
+INNER JOIN "PRD_LND_ZRP_SAP"."ZRP500"."T005T"
+    ON (T001.SID = T005T.SID AND T001.MANDT = T005T.MANDT AND T001.LAND1 = T005T.LAND1 AND T005T.SPRAS = 'E')
+LEFT JOIN "PRD_LND_ZRP_SAP"."ZRP500"."KNA1"
+    ON (KNA1.SID = BSEG.SID AND KNA1.MANDT = BSEG.MANDT AND KNA1.KUNNR = BSEG.KUNNR AND KNA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_ZRP_SAP"."ZRP500"."LFA1"
+    ON (LFA1.SID = BSEG.SID AND LFA1.MANDT = BSEG.MANDT AND LFA1.LIFNR = BSEG.LIFNR AND LFA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_ZRP_SAP"."ZRP500"."T077Y"
+    ON(LFA1.SID = T077Y.SID AND LFA1.MANDT = T077Y.MANDT AND LFA1.KTOKK = T077Y.KTOKK AND T077Y.SPRAS = 'E');
+
+-------------------------------------------PRD---------------------------
+create or replace view DEV_TDS_GBL_PRASSMNT.PROCESS_ASSESMENT.ACC_DOCUMENTS_PRD AS
+SELECT
+    // BSEG
+    BSEG.SID,
+    BSEG.MANDT,
+    BSEG.BUZEI "DocNumberItem",
+    BSEG.AUGBL "DocumentNumberClearing",
+    BSEG.KOART "AccountType",
+    BSEG.SHKZG "DebitCreditInd",
+    BSEG.GSBER "BusinessArea",
+    BSEG.DMBTR "AmountLC",
+    BSEG.WRBTR "AmountDC",
+    BSEG.SGTXT "ItemText",
+    BSEG.KOKRS "ControllingArea",
+    BSEG.HKONT "GeneralLedgerAccount",
+    BSEG.LIFNR "Vendor",
+    BSEG.ZTERM "PaymentTerm",
+    BSEG.ZBD1T "DiscountsDay1",
+    BSEG.EBELN "PO",
+    BSEG.EBELP "POItem",
+    BSEG.KUNNR "Customer",
+    BSEG.FILKD "BranchAccNumber",
+    BSEG.ZLSCH "PaymentMethod",
+    BSEG.PARGB "TradingPartnerBusinessArea",
+    BSEG.ZUONR "Assignment",
+    BSEG.VBUND "VendorTradingPartner",
+    BSEG.KOSTL "CostCenter",
+    BSEG.VBELN "BillingDocument",
+    BSEG.VBEL2 "SalesDocument",
+    BSEG.POSN2 "SalesDocumentItem",
+    BSEG.ANLN1 "MainAsset",
+    BSEG.ANLN2 "AssetSubNumber",
+    BSEG.ANBWA "AssetType",
+    BSEG.HZUON "AssigmentSpecial",
+    BSEG.DMBE2 "AmountUSD",
+    BSEG.KKBER "CreditControlArea",
+    BSEG.SEGMENT "Segment",
+    BSEG.PSEGMENT "PartnerSegment",
+    BSEG.AGZEI "ClearingItem",
+    TRY_TO_DATE(BSEG.MODIF_DATE,'yyyymmdd') "MODIF_DATE",
+    BSEG.PRCTR "ProfitCenter",
+    BSEG.UMSKZ "SpecialGLIndicator",
+    TRY_TO_DATE(BSEG.ZFBDT,'yyyymmdd') "BaselineDateForDueDate",
+    TRY_TO_DATE(BSEG.AUGDT,'yyyymmdd') "ClearingDate",
+    BSEG.BSCHL "PostingKey",
+    
+    // BKPF
+    BKPF.BUKRS "Company",
+    BKPF.BELNR "AccDocNumber",
+    BKPF.GJAHR "FiscalYear",
+    BKPF.BLART "DocumentType",
+    TRY_TO_DATE(BKPF.BLDAT,'yyyymmdd') "DateInDocument",
+    TRY_TO_DATE(BKPF.BUDAT,'yyyymmdd') "PostingDate",
+    TRY_TO_DATE(BKPF.CPUDT,'yyyymmdd') "CreationDate",
+    BKPF.USNAM "UserName",
+    BKPF.TCODE "TransactionCode",
+    BKPF.XBLNR "Reference",
+    BKPF.STBLG "ReverseDocNumber",
+    BKPF.BKTXT "DocumentHeaderText",
+    BKPF.WAERS "Currency",
+    BKPF.HWAER "LocalCurrency",
+    BKPF.AWKEY "ObjectKey",
+    
+    //T001
+    T001.BUTXT "CompanyName",
+    
+    //T005T
+    T005T.LAND1 "CompanyCountry",
+    T005T.LANDX "CompanyCountryName",
+    
+    //KNA1
+    CONCAT(KNA1.NAME1,KNA1.NAME2) "CustomerFullName",
+    
+    //LFA1
+    CONCAT(TRIM(LFA1.NAME1),TRIM(LFA1.NAME2)) "VendorFullName",
+    LFA1.J_1KFTIND "VendorTypeofIndustry",
+    LFA1.KTOKK "VendorAccountGroup",
+    LFA1.STKZN "NaturalPerson",
+    LFA1.SORTL "VendorSearchTerm",
+    LFA1.STCD1 "VendorTaxNumber1",
+    
+    //T077Y
+    T077Y.TXT30 "VendorAccountGroupName"
+    
+FROM "PRD_LND_PRD_SAP"."PRD010"."BSEG" BSEG
+INNER JOIN "PRD_LND_PRD_SAP"."PRD010"."BKPF" BKPF
+    ON (BSEG.SID = BKPF.SID AND BSEG.MANDT = BKPF.MANDT AND BSEG.BUKRS = BKPF.BUKRS 
+        AND BSEG.BELNR = BKPF.BELNR AND BSEG.GJAHR = BKPF.GJAHR)
+INNER JOIN "PRD_LND_PRD_SAP"."PRD010"."T001"
+    ON (T001.SID = BKPF.SID AND T001.MANDT = BKPF.MANDT AND T001.BUKRS = BKPF.BUKRS)
+INNER JOIN "PRD_LND_PRD_SAP"."PRD010"."T005T"
+    ON (T001.SID = T005T.SID AND T001.MANDT = T005T.MANDT AND T001.LAND1 = T005T.LAND1 AND T005T.SPRAS = 'E')
+LEFT JOIN "PRD_LND_PRD_SAP"."PRD010"."KNA1"
+    ON (KNA1.SID = BSEG.SID AND KNA1.MANDT = BSEG.MANDT AND KNA1.KUNNR = BSEG.KUNNR AND KNA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_PRD_SAP"."PRD010"."LFA1"
+    ON (LFA1.SID = BSEG.SID AND LFA1.MANDT = BSEG.MANDT AND LFA1.LIFNR = BSEG.LIFNR AND LFA1.SPRAS = 'E')
+LEFT JOIN "PRD_LND_PRD_SAP"."PRD010"."T077Y"
+    ON(LFA1.SID = T077Y.SID AND LFA1.MANDT = T077Y.MANDT AND LFA1.KTOKK = T077Y.KTOKK AND T077Y.SPRAS = 'E');
